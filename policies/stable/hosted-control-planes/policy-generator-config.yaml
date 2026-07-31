@@ -29,3 +29,10 @@ policies:
   - name: policy-hcp-enable-hypershift
     manifests:
       - path: manifests/enable-hypershift.yaml
+  # Enable managed (spoke) clusters labelled autoshift.io/hcp-hosting=true as hosting clusters by
+  # fanning out the hypershift-addon ManagedClusterAddOn. Waits on the MCE component enablement.
+  - name: policy-hcp-hypershift-addon
+    dependencies:
+      - name: policy-hcp-enable-hypershift
+    manifests:
+      - path: manifests/hypershift-addon.yaml

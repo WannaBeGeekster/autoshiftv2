@@ -40,3 +40,17 @@ Delivers a single ConfigurationPolicy (`enable-hypershift`) that ensures the MCE
 Enabling `hypershift-local-hosting` also installs the `hypershift-addon` on `local-cluster`, so the
 hub can host control planes locally. Creating actual `HostedCluster` / `NodePool` resources is a
 separate, per-use step (a follow-on policy can add a sample).
+
+## Hosting on managed (spoke) clusters
+
+To let a **managed cluster** host control planes as well (not just the hub), label it:
+
+```yaml
+hcp-hosting: 'true'
+```
+
+The `policy-hcp-hypershift-addon` policy iterates the ManagedClusters and creates a
+`ManagedClusterAddOn/hypershift-addon` (in `open-cluster-management-agent-addon`) in the namespace of
+every cluster labelled `autoshift.io/hcp-hosting: 'true'`, which installs the HyperShift Operator on
+that cluster. This policy depends on `policy-hcp-enable-hypershift` (the `hypershift` MCE component
+must be on first).

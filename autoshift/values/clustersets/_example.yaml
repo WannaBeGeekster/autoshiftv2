@@ -950,6 +950,10 @@ hubClusterSets:
       # MultiClusterEngine (created by ACM). No OLM Subscription — just the toggle.
       # Typically paired with virt (KubeVirt hosting) and metallb/an external LB.
       hcp: 'false'
+      # Marks THIS managed cluster as an HCP hosting cluster: fans out the hypershift-addon
+      # so the HyperShift Operator is installed here (the hub's local-cluster is already a
+      # hosting cluster once hcp is enabled). Set on each cluster that should host control planes.
+      hcp-hosting: 'false'
 
       # =======================================================================
       # Migration Toolkit for Virtualization

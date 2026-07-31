@@ -1,0 +1,30 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: ConfigurationPolicy
+metadata:
+  name: hypershift-addon
+spec:
+  remediationAction: ${REMEDIATION}
+  severity: high
+  # Turns managed (spoke) clusters into HyperShift hosting clusters. Enabling the `hypershift`
+  # component (policy-hcp-enable-hypershift) already makes the hub's local-cluster a hosting cluster;
+  # this fans out a `ManagedClusterAddOn/hypershift-addon` into the namespace of every ManagedCluster
+  # labelled autoshift.io/hcp-hosting=true, which installs the HyperShift Operator on that cluster.
+  # ManagedClusterAddOn is a hub-side resource in each cluster's namespace, so this policy is
+  # hub-targeted and iterates the ManagedClusters at hub-render time.
+  object-templates-raw: |
+    {{hub- $mcs := (lookup "cluster.open-cluster-management.io/v1" "ManagedCluster" "" "") hub}}
+    {{hub- if $mcs hub}}
+    {{hub- range $mc := $mcs.items hub}}
+    {{hub- if eq (dig "metadata" "labels" "autoshift.io/hcp-hosting" "false" $mc) "true" hub}}
+    - complianceType: musthave
+      objectDefinition:
+        apiVersion: addon.open-cluster-management.io/v1alpha1
+        kind: ManagedClusterAddOn
+        metadata:
+          name: hypershift-addon
+          namespace: {{hub (dig "metadata" "name" "" $mc) hub}}
+        spec:
+          installNamespace: open-cluster-management-agent-addon
+    {{hub- end hub}}
+    {{hub- end hub}}
+    {{hub- end hub}}

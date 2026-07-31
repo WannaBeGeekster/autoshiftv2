@@ -36,3 +36,12 @@ policies:
       - name: policy-hcp-enable-hypershift
     manifests:
       - path: manifests/hypershift-addon.yaml
+  # Optional illustrative sample: a KubeVirt HostedCluster + NodePool. Off by default (its own
+  # autoshift.io/hcp-sample placement); waits on the MCE component enablement.
+  - name: policy-hcp-sample-hostedcluster
+    placement:
+      placementPath: placement-sample.yaml
+    dependencies:
+      - name: policy-hcp-enable-hypershift
+    manifests:
+      - path: manifests/sample-hostedcluster

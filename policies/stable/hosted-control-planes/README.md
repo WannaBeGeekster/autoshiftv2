@@ -54,3 +54,26 @@ The `policy-hcp-hypershift-addon` policy iterates the ManagedClusters and create
 every cluster labelled `autoshift.io/hcp-hosting: 'true'`, which installs the HyperShift Operator on
 that cluster. This policy depends on `policy-hcp-enable-hypershift` (the `hypershift` MCE component
 must be on first).
+
+## Sample HostedCluster (optional)
+
+An illustrative KubeVirt `HostedCluster` + `NodePool` (named `sample`, in the `clusters` namespace)
+can be created as a starting point. It is **off by default** and gated by its own label:
+
+```yaml
+hcp-sample: 'true'
+```
+
+Tunables (labels, with defaults):
+
+| Label | Default | Purpose |
+|-------|---------|---------|
+| `hcp-sample-base-domain` | `apps.example.com` | Hosted cluster base domain |
+| `hcp-sample-pull-secret` | `sample-pull-secret` | Pull-secret **Secret name** (create it in `clusters`) |
+| `hcp-sample-ssh-key` | `sample-ssh-key` | SSH-key **Secret name** (create it in `clusters`) |
+| `hcp-sample-storage-class` | `ocs-storagecluster-ceph-rbd` | StorageClass for etcd + node root volumes |
+| `hcp-sample-api-strategy` | `NodePort` | API server publishing: `NodePort` (no LB) / `LoadBalancer` (needs MetalLB/an LB) / `Route` |
+| `hcp-sample-release-image` | `…ocp-release:4.18.0-multi` | OpenShift release image |
+
+Secrets are referenced **by name** only — create the pull-secret and SSH-key Secrets in the
+`clusters` namespace on the hosting cluster before enabling the sample.

@@ -954,6 +954,16 @@ hubClusterSets:
       # so the HyperShift Operator is installed here (the hub's local-cluster is already a
       # hosting cluster once hcp is enabled). Set on each cluster that should host control planes.
       hcp-hosting: 'false'
+      # Optional illustrative sample: a KubeVirt HostedCluster + NodePool ("sample" in the
+      # `clusters` namespace). Requires the pull-secret + ssh-key Secrets to exist there.
+      # api-strategy: NodePort (no LB needed) | LoadBalancer (needs MetalLB/an LB) | Route.
+      hcp-sample: 'false'
+      hcp-sample-base-domain: 'apps.example.com'
+      hcp-sample-pull-secret: sample-pull-secret
+      hcp-sample-ssh-key: sample-ssh-key
+      hcp-sample-storage-class: ocs-storagecluster-ceph-rbd
+      hcp-sample-api-strategy: NodePort
+      hcp-sample-release-image: 'quay.io/openshift-release-dev/ocp-release:4.18.0-multi'
 
       # =======================================================================
       # Migration Toolkit for Virtualization

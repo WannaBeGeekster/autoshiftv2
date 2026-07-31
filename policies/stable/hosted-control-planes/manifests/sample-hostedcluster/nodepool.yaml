@@ -1,0 +1,27 @@
+apiVersion: hypershift.openshift.io/v1beta1
+kind: NodePool
+metadata:
+  name: sample
+  namespace: clusters
+spec:
+  clusterName: sample
+  replicas: 2
+  arch: amd64
+  management:
+    autoRepair: true
+    upgradeType: Replace
+  release:
+    image: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-release-image" | default "quay.io/openshift-release-dev/ocp-release:4.18.0-multi" hub}}'
+  platform:
+    type: KubeVirt
+    kubevirt:
+      attachDefaultNetwork: true
+      networkInterfaceMultiqueue: Enable
+      compute:
+        cores: 2
+        memory: 8Gi
+      rootVolume:
+        type: Persistent
+        persistent:
+          size: 32Gi
+          storageClass: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-storage-class" | default "ocs-storagecluster-ceph-rbd" hub}}'

@@ -1,0 +1,21 @@
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: placement-policy-hcp-sample
+  namespace: ${POLICY_NAMESPACE}
+spec:
+  # The sample HostedCluster is created on the hosting cluster (the hub's local-cluster by default),
+  # gated by its own autoshift.io/hcp-sample label so it stays off unless explicitly requested.
+  predicates:
+    - requiredClusterSelector:
+        labelSelector:
+          matchExpressions:
+            - key: 'autoshift.io/hcp-sample'
+              operator: In
+              values:
+                - 'true'
+  tolerations:
+    - key: cluster.open-cluster-management.io/unreachable
+      operator: Exists
+    - key: cluster.open-cluster-management.io/unavailable
+      operator: Exists

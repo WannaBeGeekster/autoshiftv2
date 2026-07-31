@@ -1,0 +1,47 @@
+apiVersion: hypershift.openshift.io/v1beta1
+kind: HostedCluster
+metadata:
+  name: sample
+  namespace: clusters
+spec:
+  release:
+    image: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-release-image" | default "quay.io/openshift-release-dev/ocp-release:4.18.0-multi" hub}}'
+  # Secrets are referenced BY NAME — create them in the `clusters` namespace on the hosting cluster.
+  pullSecret:
+    name: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-pull-secret" | default "sample-pull-secret" hub}}'
+  sshKey:
+    name: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-ssh-key" | default "sample-ssh-key" hub}}'
+  dns:
+    baseDomain: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-base-domain" | default "apps.example.com" hub}}'
+  networking:
+    clusterNetwork:
+      - cidr: 10.132.0.0/14
+    serviceNetwork:
+      - cidr: 172.31.0.0/16
+    networkType: OVNKubernetes
+  platform:
+    type: KubeVirt
+    kubevirt:
+      baseDomainPassthrough: true
+  services:
+    # api-strategy: NodePort (works without an LB) | LoadBalancer (needs MetalLB/an LB) | Route.
+    - service: APIServer
+      servicePublishingStrategy:
+        type: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-api-strategy" | default "NodePort" hub}}'
+    - service: Ignition
+      servicePublishingStrategy:
+        type: Route
+    - service: Konnectivity
+      servicePublishingStrategy:
+        type: Route
+    - service: OAuthServer
+      servicePublishingStrategy:
+        type: Route
+  etcd:
+    managementType: Managed
+    managed:
+      storage:
+        type: PersistentVolume
+        persistentVolume:
+          size: 8Gi
+          storageClassName: '{{hub index .ManagedClusterLabels "autoshift.io/hcp-sample-storage-class" | default "ocs-storagecluster-ceph-rbd" hub}}'

@@ -224,6 +224,8 @@ make discover                  # List the bootstrap charts and the Helm policy c
 make validate                  # Check required tools
 make install-policy-generator  # Install kustomize and the PolicyGenerator plugin into .tools/
 make lint                      # Lint all Helm charts
+make test                      # Run the policy validation suite
+make verify                    # Run the suite, helm lint, prose lint and the docs build
 make validate-version          # Validate VERSION format
 make clean                     # Remove build artifacts
 make sync-values               # Sync bootstrap chart values from the openshift-gitops policy chart

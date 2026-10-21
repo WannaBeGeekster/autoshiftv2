@@ -186,25 +186,41 @@ curl -X POST "https://${HOST}/api/v1/user/initialize" \
 Store the returned `access_token` somewhere safe, then set both flags back to their defaults. The
 endpoint refuses to run once any user exists, so it cannot be replayed.
 
+The `access_token` expires about 150 minutes after it is issued, as recorded in the Red Hat request
+for enhancement [RFE-6177](https://issues.redhat.com/browse/RFE-6177). Use it for the setup that follows right
+away, or create a long-lived token as described in
+[Create the organization and robot accounts](#create-the-organization-and-robot-accounts).
+
 ## Pushing to this registry
 
 Use robot accounts rather than human accounts for automation, and give each job its own account:
 
 | Robot account | Used by | Access |
 |---|---|---|
-| `autoshift+release` | `make release`, to push the AutoShift charts | Creates repositories on push, and writes to every repository in the organization |
+| `autoshift+release` | `make release`, to push the AutoShift charts | Writes to every repository in the organization |
 | `autoshift+argocd` | Argo CD, to pull the AutoShift charts | Reads every repository in the organization, and nothing else |
 
-Repository permissions in Red Hat Quay are set per repository, and the chart repositories do not
-exist until the first release pushes them. The write account therefore gets its access at the
-organization level, through a team with the `creator` role, and both accounts get organization
-default permissions, which Red Hat Quay applies to every repository created later.
+Repository permissions in Red Hat Quay are set per repository, and new charts add repositories over
+time. The write account therefore gets its access at the organization level, through a team with
+the `creator` role, and both accounts get organization default permissions, which Red Hat Quay
+applies to every repository created later.
 
 ### Create the organization and robot accounts
 
-Every call needs a superuser OAuth token, such as the `access_token` returned when you created the
-first user. Red Hat Quay creates repositories on push but never organizations, so this runs once
-before the first release.
+Every call needs a superuser OAuth token. The `access_token` returned when you created the first
+user works until it expires, about 150 minutes after it was issued. For anything later, create a
+long-lived token in the web console:
+
+1. Log in as a superuser and open the organization.
+2. Select **Applications**, then **Create New Application**, and name it, for example `automation`.
+3. Open the application, select **Generate Token**, and grant the permissions to administer the
+   organization, administer repositories, create repositories, and act as a superuser.
+4. Store the token in a Secret. It is shown only once.
+
+A request with an expired or missing token fails with `403` and
+`CSRF token was invalid or missing`, because Red Hat Quay then treats it as a browser call.
+
+Red Hat Quay never creates organizations on push, so this runs once before the first release.
 
 ```bash
 HOST=$(oc get route registry-quay -n quay-enterprise -o jsonpath='{.spec.host}')
@@ -265,23 +281,65 @@ curl -sf "${API}/organization/${ORG}/robots/release" -H "$AUTH" | jq -r .token |
 `--password-stdin` keeps the token out of the shell history and the process list. The same token
 works with `podman login`.
 
-> [!NOTE]
-> The first push right after creating the team and default permissions can fail with
-> `401 Unauthorized` on a `HEAD` request. Retrying a minute later succeeds.
+### Create the repositories before the first release
+
+`helm push` cannot create a repository in Red Hat Quay. Before it uploads, Helm checks whether the
+chart already exists, and for a repository that does not exist yet Red Hat Quay answers
+`401 Unauthorized` instead of `404`. The push stops there with:
+
+```
+failed to perform "Exists" on destination: HEAD ".../manifests/sha256:...": response status code 401: Unauthorized
+```
+
+Create every chart repository once, before the first `make release`. A dry run builds the charts, so
+it gives the full list:
+
+```bash
+VERSION=X.Y.Z
+make release VERSION="$VERSION" REGISTRY="$HOST" REGISTRY_NAMESPACE="$ORG" DRY_RUN=true
+
+{ for f in .helm-charts/bootstrap/*-"$VERSION".tgz; do echo "bootstrap/$(basename "$f" -"$VERSION".tgz)"; done
+  echo autoshift
+  for f in .helm-charts/policies/*-"$VERSION".tgz; do echo "policies/$(basename "$f" -"$VERSION".tgz)"; done
+} | while read -r repo; do
+  curl -s -o /dev/null -w "%{http_code} ${repo}\n" -X POST "${API}/repository" -H "$AUTH" -H "$JSON" \
+    --data "{\"namespace\":\"${ORG}\",\"repository\":\"${repo}\",\"visibility\":\"private\",\"description\":\"\",\"repo_kind\":\"image\"}"
+done
+```
+
+`201` means created, `400` means the repository already exists, and `403` means the token has
+expired. The organization default
+permissions apply to these repositories as well, so `autoshift+release` can write and
+`autoshift+argocd` can read. Later releases need this step only when a new policy adds a chart.
 
 ### Let Argo CD pull the charts
 
-Argo CD needs a repository Secret, not a pull secret, and it uses the read account:
+Argo CD reads registry credentials from a `repo-creds` Secret whose URL starts with `oci://`. Use
+the read account:
 
 ```bash
-oc create secret generic quay-charts -n openshift-gitops \
-  --from-literal=type=helm \
-  --from-literal=url="$HOST" \
-  --from-literal=enableOCI=true \
-  --from-literal=username="${ORG}+argocd" \
+cat <<EOF | oc apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: autoshift-oci-creds
+  namespace: openshift-gitops
+  labels:
+    argocd.argoproj.io/secret-type: repo-creds
+stringData:
+  type: helm
+  url: oci://${HOST}/${ORG}
+  enableOCI: "true"
+  username: ${ORG}+argocd
+EOF
+oc set data secret/autoshift-oci-creds -n openshift-gitops \
   --from-file=password=<(curl -sf "${API}/organization/${ORG}/robots/argocd" -H "$AUTH" | jq -j .token)
-oc label secret quay-charts -n openshift-gitops argocd.argoproj.io/secret-type=repository
 ```
+
+The registry route usually carries the cluster wildcard certificate. If that certificate comes from
+a private certificate authority, Argo CD also needs it. Both steps, and the second credential that
+`install-autoshift.sh` needs, are in
+[Private registry authentication](../../../docs/releases.md#private-registry-authentication).
 
 ## Trusting the registry across the cluster
 

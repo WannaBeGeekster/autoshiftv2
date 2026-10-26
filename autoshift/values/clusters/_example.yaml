@@ -235,3 +235,19 @@ clusters:
       opentelemetry-channel: stable
       opentelemetry-source: redhat-operators
       opentelemetry-source-namespace: openshift-marketplace
+
+      # =======================================================================
+      # Kube Descheduler
+      # =======================================================================
+      kube-descheduler: 'false'
+      kube-descheduler-subscription-name: cluster-kube-descheduler-operator
+      kube-descheduler-channel: stable
+      kube-descheduler-source: redhat-operators
+      kube-descheduler-source-namespace: openshift-marketplace
+      kube-descheduler-version: 'clusterkubedescheduleroperator.v5.4.3'
+
+      # =======================================================================
+      # Kube Descheduler PSI kernel argument (KubeVirtRelieveAndMigrate). RESTARTS every node in the pool
+      # =======================================================================
+      kube-descheduler-psi: 'false'
+      kube-descheduler-psi-role: worker       # machine config pool for psi=1: 'master' on compact or single-node clusters

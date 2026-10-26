@@ -1,0 +1,13 @@
+# Readiness of the KubeDescheduler instance (inform only). The operator reports
+# TargetConfigControllerDegraded=True when it cannot apply the configuration, most often because a
+# profile needs something the cluster lacks: KubeVirtRelieveAndMigrate without PSI on the nodes is
+# the common case.
+apiVersion: operator.openshift.io/v1
+kind: KubeDescheduler
+metadata:
+  name: cluster
+  namespace: openshift-kube-descheduler-operator
+status:
+  conditions:
+    - type: TargetConfigControllerDegraded
+      status: 'False'

@@ -1,0 +1,26 @@
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: placement-policy-kube-descheduler-psi
+  namespace: ${POLICY_NAMESPACE}
+spec:
+  # No spec.clusterSets: selects across all ManagedClusterSetBindings in this namespace,
+  # filtered by the predicate below. Opt-in on top of kube-descheduler: the PSI MachineConfig
+  # restarts every node in its pool, so it is its own label rather than a side effect of a profile.
+  predicates:
+    - requiredClusterSelector:
+        labelSelector:
+          matchExpressions:
+            - key: 'autoshift.io/kube-descheduler'
+              operator: In
+              values:
+                - 'true'
+            - key: 'autoshift.io/kube-descheduler-psi'
+              operator: In
+              values:
+                - 'true'
+  tolerations:
+    - key: cluster.open-cluster-management.io/unreachable
+      operator: Exists
+    - key: cluster.open-cluster-management.io/unavailable
+      operator: Exists

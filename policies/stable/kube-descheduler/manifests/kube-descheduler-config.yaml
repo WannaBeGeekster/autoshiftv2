@@ -1,0 +1,42 @@
+# KubeDescheduler instance. The operator reconciles only the instance named "cluster" in its
+# namespace. Settings come from config.kubeDescheduler in the cluster's rendered-config:
+#   profiles                     list, default [AffinityAndTaints]. KubeVirtRelieveAndMigrate needs
+#                                PSI on the nodes that run virtual machines (kube-descheduler-psi)
+#                                and cannot be combined with LongLifecycle.
+#   mode                         Predictive (default: simulate and log only) or Automatic (evict).
+#   deschedulingIntervalSeconds  default 3600.
+#   profileCustomizations        passed through unchanged, so new fields need no policy change.
+#   evictionLimits               passed through. For virtual machines, match the HyperConverged
+#                                parallelOutboundMigrationsPerNode (node) and
+#                                parallelMigrationsPerCluster (total).
+# fromConfigMap fails the policy when rendered-config is missing, rather than rendering defaults
+# that mustonlyhave would then enforce over a configured instance.
+object-templates-raw: |
+  {{hub- $cfg := (fromConfigMap .PolicyMetadata.namespace (printf "%s.rendered-config" .ManagedClusterName) "config" | default "" | fromYaml | default dict) hub}}
+  {{hub- $kd := dig "kubeDescheduler" dict $cfg hub}}
+  {{hub- $profiles := (dig "profiles" (list "AffinityAndTaints") $kd) hub}}
+  {{hub- $custom := (dig "profileCustomizations" dict $kd) hub}}
+  {{hub- $limits := (dig "evictionLimits" dict $kd) hub}}
+  - complianceType: mustonlyhave
+    objectDefinition:
+      apiVersion: operator.openshift.io/v1
+      kind: KubeDescheduler
+      metadata:
+        name: cluster
+        namespace: openshift-kube-descheduler-operator
+      spec:
+        managementState: Managed
+        mode: {{hub dig "mode" "Predictive" $kd hub}}
+        deschedulingIntervalSeconds: {{hub dig "deschedulingIntervalSeconds" 3600 $kd hub}}
+        profiles:
+          {{hub- range $p := $profiles hub}}
+          - {{hub $p hub}}
+          {{hub- end hub}}
+        {{hub- if $custom hub}}
+        profileCustomizations:
+          {{hub $custom | toYaml | autoindent hub}}
+        {{hub- end hub}}
+        {{hub- if $limits hub}}
+        evictionLimits:
+          {{hub $limits | toYaml | autoindent hub}}
+        {{hub- end hub}}

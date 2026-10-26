@@ -855,6 +855,23 @@ hubClusterSets:
       # =======================================================================
       # Workload Partitioning (CPU isolation via PerformanceProfile)
       # =======================================================================
+      # =======================================================================
+      # Kube Descheduler (kube-descheduler label). Settings for the KubeDescheduler instance.
+      # Defaults when unset: profiles [AffinityAndTaints], mode Predictive, interval 3600.
+      # profileCustomizations and evictionLimits are passed through unchanged.
+      # =======================================================================
+      kubeDescheduler:
+        profiles:
+          - KubeVirtRelieveAndMigrate           # needs kube-descheduler-psi; cannot combine with LongLifecycle
+        mode: Predictive                        # Predictive simulates and logs; Automatic evicts
+        deschedulingIntervalSeconds: 60
+        profileCustomizations:
+          devEnableSoftTainter: true
+          devDeviationThresholds: AsymmetricLow
+          devActualUtilizationProfile: PrometheusCPUMemoryCombinedProfile
+        evictionLimits:                         # match the HyperConverged migration limits
+          node: 2                               # parallelOutboundMigrationsPerNode
+          total: 5                              # parallelMigrationsPerCluster
       workloadPartitioning:
         reservedCpus: '0-3'
         isolatedCpus: '4-31'
@@ -1986,3 +2003,19 @@ hubClusterSets:
       trident-source-namespace: openshift-marketplace
       trident-channel: stable
       trident-version: 'trident-operator.v25.06.0'   # optional CSV version pin
+
+      # =======================================================================
+      # Kube Descheduler
+      # =======================================================================
+      kube-descheduler: 'false'
+      kube-descheduler-subscription-name: cluster-kube-descheduler-operator
+      kube-descheduler-channel: stable
+      kube-descheduler-source: redhat-operators
+      kube-descheduler-source-namespace: openshift-marketplace
+      kube-descheduler-version: 'clusterkubedescheduleroperator.v5.4.3'
+
+      # =======================================================================
+      # Kube Descheduler PSI kernel argument (KubeVirtRelieveAndMigrate). RESTARTS every node in the pool
+      # =======================================================================
+      kube-descheduler-psi: 'false'
+      kube-descheduler-psi-role: worker       # machine config pool for psi=1: 'master' on compact or single-node clusters

@@ -1,0 +1,18 @@
+# Pressure Stall Information (PSI) kernel argument, required by the KubeVirtRelieveAndMigrate
+# profile on every node that runs virtual machines. Applying it RESTARTS each node in the pool, one
+# at a time. kube-descheduler-psi-role selects the pool: worker (default), or master on a compact or
+# single-node cluster, where the worker pool is empty. The name must sort after the 98- prefix,
+# which disables PSI.
+object-templates-raw: |
+  {{hub- $role := (index .ManagedClusterLabels "autoshift.io/kube-descheduler-psi-role" | default "worker") hub}}
+  - complianceType: musthave
+    objectDefinition:
+      apiVersion: machineconfiguration.openshift.io/v1
+      kind: MachineConfig
+      metadata:
+        name: 99-{{hub $role hub}}-kube-descheduler-psi
+        labels:
+          machineconfiguration.openshift.io/role: {{hub $role hub}}
+      spec:
+        kernelArguments:
+          - psi=1

@@ -133,6 +133,7 @@ Every managed operator supports version control through its respective label:
 | Local Storage               | `local-storage-version` | `local-storage-operator.v4.22.0-202608122145`      |
 | NMState                     | `nmstate-version`       | `kubernetes-nmstate-operator.4.22.0-202608130510`  |
 | OpenShift Virtualization    | `virt-version`          | `kubevirt-hyperconverged-operator.v4.22.6`         |
+| Kube Descheduler            | `kube-descheduler-version` | `clusterkubedescheduleroperator.v5.4.3`         |
 
 ### Finding available CSV versions
 
@@ -738,6 +739,32 @@ no interactive administrator until you either configure OpenID Connect and list 
 | `virt-version`                    | string            | (optional)                | Specific CSV version for controlled upgrades |
 | `virt-source`                     | string            | `redhat-operators`        |       |
 | `virt-source-namespace`           | string            | `openshift-marketplace`   |       |
+
+### Kube Descheduler
+
+Installs the Kube Descheduler Operator and manages its `KubeDescheduler` instance from
+`config.kubeDescheduler`. With Red Hat OpenShift Virtualization, the `KubeVirtRelieveAndMigrate`
+profile rebalances virtual machines by live migration. See the
+[policy README](../policies/stable/kube-descheduler/README.md).
+
+| Variable                              | Type   | Default Value                           | Notes |
+|---------------------------------------|--------|-----------------------------------------|-------|
+| `kube-descheduler`                    | bool   | `false`                                 | If not set the Kube Descheduler will not be managed |
+| `kube-descheduler-subscription-name`  | string | `cluster-kube-descheduler-operator`     |       |
+| `kube-descheduler-channel`            | string | `stable`                                |       |
+| `kube-descheduler-version`            | string | (optional)                              | Specific CSV version for controlled upgrades |
+| `kube-descheduler-source`             | string | `redhat-operators`                      |       |
+| `kube-descheduler-source-namespace`   | string | `openshift-marketplace`                 |       |
+| `kube-descheduler-psi`                | bool   | `false`                                 | Adds the `psi=1` kernel argument needed by `KubeVirtRelieveAndMigrate`. Restarts every node in the pool |
+| `kube-descheduler-psi-role`           | string | `worker`                                | Machine config pool for the kernel argument. `master` on compact or single-node clusters |
+
+| Config key (`config.kubeDescheduler`) | Type   | Default Value          | Notes |
+|---------------------------------------|--------|------------------------|-------|
+| `profiles`                            | list   | `[AffinityAndTaints]`  | Descheduler profiles |
+| `mode`                                | string | `Predictive`           | `Predictive` logs only; `Automatic` evicts |
+| `deschedulingIntervalSeconds`         | int    | `3600`                 |       |
+| `profileCustomizations`               | map    | not set                | Passed through unchanged |
+| `evictionLimits`                      | map    | not set                | `node` and `total` concurrent evictions. For virtual machines, match the `HyperConverged` migration limits |
 
 ### Developer OpenShift gitops
 

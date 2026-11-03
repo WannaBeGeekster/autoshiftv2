@@ -130,6 +130,7 @@ Every managed operator supports version control through its respective label:
 | Cluster Observability       | `coo-version`           | `cluster-observability-operator.v0.4.0`            |
 | Compliance Operator         | `compliance-version`    | `compliance-operator.v1.8.0`                       |
 | LVM Storage                 | `lvm-version`           | `lvms-operator.v4.22.0`                            |
+| OADP                        | `oadp-version`          | `oadp-operator.v1.6.2`                             |
 | Local Storage               | `local-storage-version` | `local-storage-operator.v4.22.0-202608122145`      |
 | NMState                     | `nmstate-version`       | `kubernetes-nmstate-operator.4.22.0-202608130510`  |
 | OpenShift Virtualization    | `virt-version`          | `kubevirt-hyperconverged-operator.v4.22.6`         |
@@ -805,6 +806,21 @@ no interactive administrator until you either configure OpenID Connect and list 
 | `lvm-fstype`                          | string            | `xfs`                     | Options `xfs` `ext4` |
 | `lvm-size-percent`                    | int               | `90`                      | Percentage of the Volume Group to use for the thinpool |
 | `lvm-overprovision-ratio`             | int               | `10`                      |       |
+
+### OADP (OpenShift API for Data Protection)
+
+Installs the OADP operator, which runs Velero, in `openshift-adp`. The policy installs the operator
+only; the `DataProtectionApplication`, backup storage locations and schedules are configured
+separately. See the [policy README](../policies/stable/oadp/README.md).
+
+| Variable                              | Type              | Default Value             | Notes |
+|---------------------------------------|-------------------|---------------------------|-------|
+| `oadp`                                | bool              | `false`                   | If not set the OADP operator will not be managed |
+| `oadp-subscription-name`              | string            | `redhat-oadp-operator`    |       |
+| `oadp-channel`                        | string            | `stable`                  | Operator channel |
+| `oadp-version`                        | string            | (optional)                | Specific CSV version for controlled upgrades |
+| `oadp-source`                         | string            | `redhat-operators`        | Operator catalog source |
+| `oadp-source-namespace`               | string            | `openshift-marketplace`   | Catalog namespace |
 
 ### Local Storage Operator
 

@@ -1574,6 +1574,17 @@ hubClusterSets:
       local-storage-source-namespace: openshift-marketplace
 
       # =======================================================================
+      # OADP (OpenShift API for Data Protection, Velero). Operator install only;
+      # DataProtectionApplication and backup schedules are configured separately.
+      # =======================================================================
+      oadp: 'false'
+      oadp-subscription-name: redhat-oadp-operator
+      oadp-channel: stable
+      oadp-version: 'oadp-operator.v1.6.2'
+      oadp-source: redhat-operators
+      oadp-source-namespace: openshift-marketplace
+
+      # =======================================================================
       # OpenShift Data Foundation
       # =======================================================================
       odf: 'false'
